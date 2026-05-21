@@ -25,7 +25,7 @@ export default defineConfig(() => {
       setupFiles: ['./src/test-setup.ts'],
       include: ['src/**/__tests__/**/*.test.{ts,tsx}', 'src/**/*.test.{ts,tsx}'],
       coverage: {
-        provider: 'v8',
+        provider: 'v8' as const,
         reporter: ['text', 'html'],
         include: ['src/lib/**', 'src/components/**'],
       },
