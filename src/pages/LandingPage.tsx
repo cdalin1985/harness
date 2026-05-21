@@ -38,9 +38,9 @@ export default function LandingPage() {
       setQueueNumber(randomSeed);
       setStatus('completed');
       setEmail('');
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Waitlist registration failed:', err);
-      setErrorMessage('Registration failed. Please verify firebase connectivity.');
+      setErrorMessage('Something went wrong. Please try again in a moment.');
       setStatus('error');
     }
   };

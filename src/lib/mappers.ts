@@ -34,7 +34,7 @@ export interface DbHarnessInstance {
   template_id: string;
   version_id: string;
   name: string;
-  customized_variables: Record<string, any>;
+  customized_variables: Record<string, string | number | boolean>;
   customized_prompt: string;
   notes: string;
   status: 'draft' | 'active' | 'archived';

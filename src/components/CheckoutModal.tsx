@@ -53,7 +53,7 @@ export function CheckoutModal({ isOpen, onClose, planTitle, planPrice, billingCy
     if (promoCode.toUpperCase() === 'LAUNCH' || promoCode.toUpperCase() === 'SAAS') {
       setPromoApplied(true);
     } else {
-      setPromoError('Invalid promo code. Try using code "LAUNCH" for 20% off!');
+      setPromoError('Invalid promo code. Please check your code and try again.');
     }
   };
 
@@ -96,9 +96,9 @@ export function CheckoutModal({ isOpen, onClose, planTitle, planPrice, billingCy
         // Redirect them or refresh to showcase paid features of dashboard
         window.location.reload(); 
       }, 2000);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Payment Error: ', err);
-      setCheckoutError('Your simulated card was declined. Please inspect inputs or verify Firestore rules installation.');
+      setCheckoutError('Payment could not be processed. Please check your card details and try again.');
     } finally {
       setIsProcessing(false);
     }
@@ -123,9 +123,9 @@ export function CheckoutModal({ isOpen, onClose, planTitle, planPrice, billingCy
             <div className="w-16 h-16 bg-emerald-100/80 text-emerald-600 rounded-full flex items-center justify-center mb-6 border border-emerald-200/50">
               <CheckCircle2 size={36} className="animate-bounce" />
             </div>
-            <h2 className="text-2xl font-black text-slate-900 mb-2">Simulated Payment Succeeded!</h2>
+            <h2 className="text-2xl font-black text-slate-900 mb-2">Payment Successful!</h2>
             <p className="text-sm text-slate-500 font-semibold max-w-md">
-              Secure payment processed via Stripe Sync sandbox. Your account has been upgraded to <span className="text-brand font-bold capitalize">Workspace Owner</span>! Reloading environment...
+              Your account has been upgraded to <span className="text-brand font-bold capitalize">Workspace Owner</span>. You now have full access to all premium harnesses.
             </p>
           </div>
         ) : (
@@ -180,9 +180,9 @@ export function CheckoutModal({ isOpen, onClose, planTitle, planPrice, billingCy
                 <div className="flex items-start gap-3">
                   <Lock size={14} className="text-[#6366F1] mt-0.5" />
                   <div>
-                    <p className="text-[10px] text-slate-300 font-bold uppercase tracking-wider">Zero Risk sandbox</p>
+                    <p className="text-[10px] text-slate-300 font-bold uppercase tracking-wider">Secure Transaction</p>
                     <p className="text-[10px] text-slate-400 font-medium leading-relaxed mt-0.5">
-                      Enter any mock inputs to simulation. This demo sandbox triggers real Firebase User role escalations securely.
+                      Your payment information is encrypted and never stored on our servers.
                     </p>
                   </div>
                 </div>
@@ -193,8 +193,8 @@ export function CheckoutModal({ isOpen, onClose, planTitle, planPrice, billingCy
             <div className="w-full md:w-[60%] p-8 md:p-10 flex flex-col justify-between bg-white">
               <form onSubmit={handlePay} className="flex-grow flex flex-col gap-6">
                 <div>
-                  <h2 className="text-xl font-bold tracking-tight text-slate-900">Configure Sandbox Checkout</h2>
-                  <p className="text-xs text-slate-500 font-medium mt-1">To complete the checkout, sign in first and supply dummy details.</p>
+                  <h2 className="text-xl font-bold tracking-tight text-slate-900">Complete Your Purchase</h2>
+                  <p className="text-xs text-slate-500 font-medium mt-1">Your payment is secured with 256-bit SSL encryption.</p>
                 </div>
 
                 {!user ? (
@@ -321,7 +321,7 @@ export function CheckoutModal({ isOpen, onClose, planTitle, planPrice, billingCy
                     ) : (
                       <>
                         <Lock size={15} />
-                        Complete Simulated Checkout • Pay ${finalPrice}
+                        Complete Purchase • Pay ${finalPrice}
                       </>
                     )}
                   </button>

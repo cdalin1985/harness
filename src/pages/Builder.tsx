@@ -1,13 +1,14 @@
 import React, { useState } from 'react';
 import { Save, Play, Download, History, MessageSquare, Terminal as TerminalIcon, AlertCircle, Variable, Check } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
+import { HarnessEngine } from '../lib/harness-engine';
 
 export default function Builder() {
   const [activeTab, setActiveTab] = useState('variables');
   const [testInput, setTestInput] = useState('');
   const [isEvaluating, setIsEvaluating] = useState(false);
   const [evalResult, setEvalResult] = useState<string | null>(null);
-  
+
   // Customization State
   const [variables, setVariables] = useState({
     companyName: 'Acme Corp',
@@ -21,16 +22,32 @@ export default function Builder() {
     { id: 'eval', name: 'Evaluation', icon: MessageSquare },
   ];
 
-  const handleTest = () => {
+  const handleTest = async () => {
+    if (!testInput.trim()) return;
     setIsEvaluating(true);
     setEvalResult(null);
-    setTimeout(() => {
+    try {
+      const response = await fetch('/api/gemini/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          prompt: `${generatedPrompt}\n\nUser message: ${testInput}`,
+        }),
+      });
+      const data = await response.json() as { success: boolean; text?: string; error?: { message: string } };
+      if (data.success && data.text) {
+        setEvalResult(data.text);
+      } else {
+        setEvalResult(`Error: ${data.error?.message ?? 'Request failed. Please try again.'}`);
+      }
+    } catch {
+      setEvalResult('Network error. Please check your connection and try again.');
+    } finally {
       setIsEvaluating(false);
-      setEvalResult("Hello! I am so sorry to hear you're having trouble with your connection. I'm here to help you get that resolved right away. Could you please confirm...");
-    }, 1200);
+    }
   };
 
-  const generatedPrompt = `YOU ARE A HIGH-EMPATHY CUSTOMER SUPPORT AGENT FOR ${variables.companyName.toUpperCase()}. 
+  const generatedPrompt = `YOU ARE A HIGH-EMPATHY CUSTOMER SUPPORT AGENT FOR ${variables.companyName.toUpperCase()}.
 
 CORE RULES:
 1. MAINTAIN A TONE THAT IS ${variables.tone.toUpperCase()}.
@@ -38,6 +55,22 @@ CORE RULES:
 3. NEVER PROMISE REFUNDS WITHOUT APPROVAL.
 4. USE THE USER'S PREFERRED NAME.
 `;
+
+  const harnessName = 'Customer_Support_L1';
+  const harnessVersion = '1.4.2';
+
+  const handleExport = (format: 'txt' | 'json' | 'yaml') => {
+    if (format === 'txt') {
+      const content = HarnessEngine.toMarkdown(harnessName, harnessVersion, generatedPrompt);
+      downloadFile(content, `${harnessName}-v${harnessVersion}.md`, 'text/markdown');
+    } else if (format === 'json') {
+      const content = HarnessEngine.toJSON(harnessName, harnessVersion, generatedPrompt, variables);
+      downloadFile(content, `${harnessName}-v${harnessVersion}.json`, 'application/json');
+    } else if (format === 'yaml') {
+      const content = HarnessEngine.toYAML(harnessName, harnessVersion, generatedPrompt, variables);
+      downloadFile(content, `${harnessName}-v${harnessVersion}.yaml`, 'text/yaml');
+    }
+  };
 
   return (
     <div className="flex flex-col gap-6 h-full">
@@ -86,24 +119,24 @@ CORE RULES:
                 <div>
                   <h3 className="text-sm font-bold text-slate-900 mb-1">Required Variables</h3>
                   <p className="text-xs text-slate-500 mb-4">These define the core behavior of your Harness Instance.</p>
-                  
+
                   <div className="flex flex-col gap-4">
                     <div>
                       <label className="block text-xs font-bold uppercase tracking-widest text-slate-500 mb-2">Company Name <span className="text-rose-500">*</span></label>
-                      <input 
-                        type="text" 
+                      <input
+                        type="text"
                         value={variables.companyName}
                         onChange={(e) => setVariables({...variables, companyName: e.target.value})}
-                        className="w-full bg-slate-50 border border-slate-200 rounded-lg px-4 py-2 font-medium text-slate-900 focus:outline-none focus:ring-2 focus:ring-brand/20 transition-all" 
+                        className="w-full bg-slate-50 border border-slate-200 rounded-lg px-4 py-2 font-medium text-slate-900 focus:outline-none focus:ring-2 focus:ring-brand/20 transition-all"
                       />
                     </div>
                     <div>
                       <label className="block text-xs font-bold uppercase tracking-widest text-slate-500 mb-2">Tone of Voice <span className="text-rose-500">*</span></label>
-                      <input 
-                        type="text" 
+                      <input
+                        type="text"
                         value={variables.tone}
                         onChange={(e) => setVariables({...variables, tone: e.target.value})}
-                        className="w-full bg-slate-50 border border-slate-200 rounded-lg px-4 py-2 font-medium text-slate-900 focus:outline-none focus:ring-2 focus:ring-brand/20 transition-all" 
+                        className="w-full bg-slate-50 border border-slate-200 rounded-lg px-4 py-2 font-medium text-slate-900 focus:outline-none focus:ring-2 focus:ring-brand/20 transition-all"
                       />
                     </div>
                   </div>
@@ -112,14 +145,14 @@ CORE RULES:
                 <div className="pt-6 border-t border-slate-200">
                   <h3 className="text-sm font-bold text-slate-900 mb-1">Optional Variables</h3>
                   <p className="text-xs text-slate-500 mb-4">Configure specific integrations or product lines.</p>
-                  
+
                   <div className="flex flex-col gap-4">
                      <div>
                       <label className="block text-xs font-bold uppercase tracking-widest text-slate-500 mb-2">Product Line Context</label>
-                      <textarea 
+                      <textarea
                         value={variables.productLine}
                         onChange={(e) => setVariables({...variables, productLine: e.target.value})}
-                        className="w-full bg-slate-50 border border-slate-200 rounded-lg px-4 py-2 font-medium text-slate-900 focus:outline-none focus:ring-2 focus:ring-brand/20 transition-all resize-none min-h-[80px]" 
+                        className="w-full bg-slate-50 border border-slate-200 rounded-lg px-4 py-2 font-medium text-slate-900 focus:outline-none focus:ring-2 focus:ring-brand/20 transition-all resize-none min-h-[80px]"
                       />
                     </div>
                   </div>
@@ -136,7 +169,7 @@ CORE RULES:
                      All variables injected
                   </div>
                 </div>
-                <textarea 
+                <textarea
                   readOnly
                   className="w-full flex-grow p-6 bg-white border-none font-mono text-sm leading-relaxed focus:outline-none resize-none text-slate-700"
                   value={generatedPrompt}
@@ -161,10 +194,10 @@ CORE RULES:
               <Play size={14} className="text-brand" />
               Evaluation Center
             </h3>
-            
+
             <div className="flex flex-col gap-3 flex-grow h-full">
                <div className="flex-grow flex flex-col">
-                <textarea 
+                <textarea
                   className="w-full flex-grow min-h-[100px] bg-white/5 border border-white/10 rounded-lg p-3 text-sm focus:outline-none focus:border-brand/50 transition-all font-mono resize-none"
                   placeholder="Simulate a user query..."
                   value={testInput}
@@ -172,7 +205,7 @@ CORE RULES:
                 />
                </div>
 
-               <button 
+               <button
                 onClick={handleTest}
                 disabled={isEvaluating}
                 className="w-full bg-brand text-white py-2 rounded-lg text-xs font-bold uppercase tracking-widest hover:opacity-90 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
@@ -183,16 +216,23 @@ CORE RULES:
 
             <AnimatePresence>
               {evalResult && (
-                <motion.div 
+                <motion.div
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -10 }}
                   className="p-4 bg-[#111827] rounded-lg border border-[#374151] text-xs font-mono leading-relaxed mt-2 overflow-y-auto max-h-[140px]"
                 >
-                  <div className="text-emerald-400 mb-2 flex items-center gap-2 font-bold uppercase tracking-widest text-[10px]">
-                    <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full" />
-                    Quality Gates Passed
-                  </div>
+                  {evalResult?.startsWith('Error:') || evalResult?.startsWith('Network') ? (
+                    <div className="text-rose-400 mb-2 flex items-center gap-2 font-bold uppercase tracking-widest text-[10px]">
+                      <div className="w-1.5 h-1.5 bg-rose-500 rounded-full" />
+                      Evaluation Failed
+                    </div>
+                  ) : (
+                    <div className="text-emerald-400 mb-2 flex items-center gap-2 font-bold uppercase tracking-widest text-[10px]">
+                      <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full" />
+                      Agent Response
+                    </div>
+                  )}
                   {evalResult}
                 </motion.div>
               )}
@@ -203,12 +243,15 @@ CORE RULES:
             <div>
               <h3 className="text-sm font-bold text-slate-900 tracking-tight mb-3">Export Formats</h3>
               <div className="flex flex-col gap-2">
-                <ExportItem label="Plain Text Prompt" />
-                <ExportItem label="JSON Structure" />
-                <ExportItem label="YAML Structure" />
+                <ExportItem label="Plain Text Prompt" onClick={() => handleExport('txt')} />
+                <ExportItem label="JSON Structure" onClick={() => handleExport('json')} />
+                <ExportItem label="YAML Structure" onClick={() => handleExport('yaml')} />
               </div>
             </div>
-            <button className="w-full flex items-center justify-center gap-2 border border-[#E5E7EB] py-2 rounded-lg text-xs font-bold text-slate-600 hover:bg-slate-50 transition-all">
+            <button
+              onClick={() => handleExport('json')}
+              className="w-full flex items-center justify-center gap-2 border border-[#E5E7EB] py-2 rounded-lg text-xs font-bold text-slate-600 hover:bg-slate-50 transition-all"
+            >
               <Download size={14} />
               Export Harness Instance
             </button>
@@ -219,9 +262,24 @@ CORE RULES:
   );
 }
 
-function ExportItem({ label }: { label: string }) {
+function downloadFile(content: string, filename: string, mimeType: string): void {
+  const blob = new Blob([content], { type: mimeType });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+function ExportItem({ label, onClick }: { label: string; onClick: () => void }) {
   return (
-    <div className="flex items-center justify-between p-2 rounded-md border border-transparent hover:border-[#E5E7EB] hover:bg-slate-50 transition-all group cursor-pointer">
+    <div
+      onClick={onClick}
+      className="flex items-center justify-between p-2 rounded-md border border-transparent hover:border-[#E5E7EB] hover:bg-slate-50 transition-all group cursor-pointer"
+    >
       <span className="text-xs font-bold text-slate-600 group-hover:text-slate-900">{label}</span>
       <Download size={12} className="text-slate-300 group-hover:text-brand" />
     </div>

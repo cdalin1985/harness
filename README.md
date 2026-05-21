@@ -1,5 +1,7 @@
 # HarnessOS
 
+[![CI](https://github.com/cdalin1985/harness/actions/workflows/ci.yml/badge.svg)](https://github.com/cdalin1985/harness/actions/workflows/ci.yml)
+
 HarnessOS is a premium, enterprise-grade agentic DevOps platform designed to draft, customize, validate, test, and securely export **AI Agent Harnesses** (advanced configuration setups comprising system prompts, workflow guides, memory state strategies, and quality gates). 
 
 HarnessOS bridges the gap between raw LLM completions and reliable, business-aligned agentic operations.

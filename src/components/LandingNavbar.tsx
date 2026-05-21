@@ -6,7 +6,7 @@ export default function LandingNavbar() {
   const { user, login } = useAuth();
   const navigate = useNavigate();
 
-  const handleAction = async () => {
+  const _handleAction = async () => {
     if (user) {
       navigate('/dashboard');
     } else {

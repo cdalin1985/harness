@@ -18,10 +18,13 @@ export interface HarnessEngineSchema {
   variables: HarnessVariableSpec[];
 }
 
+/** Type-safe variable value — harness variables are always scalar. */
+export type HarnessVariableValue = string | number | boolean;
+
 export interface ValidationResult {
   isValid: boolean;
   errors: Record<string, string>;
-  sanitized: Record<string, any>;
+  sanitized: Record<string, HarnessVariableValue>;
 }
 
 export class HarnessEngine {
@@ -29,11 +32,11 @@ export class HarnessEngine {
    * Parses and validates user input variables against the harness schema.
    */
   static validateVariables(
-    userInput: Record<string, any>,
+    userInput: Record<string, unknown>,
     schemaJson: string | HarnessEngineSchema
   ): ValidationResult {
     const errors: Record<string, string> = {};
-    const sanitized: Record<string, any> = {};
+    const sanitized: Record<string, HarnessVariableValue> = {};
 
     let schema: HarnessEngineSchema;
     try {
@@ -43,7 +46,7 @@ export class HarnessEngine {
     }
 
     if (!schema || !Array.isArray(schema.variables)) {
-      return { isValid: true, errors, sanitized: userInput };
+      return { isValid: true, errors, sanitized: userInput as Record<string, HarnessVariableValue> };
     }
 
     for (const varSpec of schema.variables) {
@@ -108,7 +111,7 @@ export class HarnessEngine {
    */
   static compilePrompt(
     scaffold: string,
-    variables: Record<string, any>
+    variables: Record<string, HarnessVariableValue>
   ): string {
     if (!scaffold) return '';
     let compiled = scaffold;
@@ -123,6 +126,15 @@ export class HarnessEngine {
   }
 
   /**
+   * Returns any {{variable}} placeholders that were not replaced by compilePrompt.
+   * Useful for warning users that their scaffold has unresolved keys.
+   */
+  static detectUnresolvedVariables(compiled: string): string[] {
+    const matches = [...compiled.matchAll(/\{\{\s*(\w+)\s*\}\}/g)];
+    return [...new Set(matches.map(m => m[1] ?? '').filter(Boolean))];
+  }
+
+  /**
    * Redacts high-proprietary templates and blocks if locks are verified.
    */
   static redactPremiumContent(
@@ -134,7 +146,7 @@ export class HarnessEngine {
     if (!isPremium || hasUnlocked) return content;
 
     // Mask actual operational details recursively to preserve structure but protect property
-    return content.split('\n').map((line, idx) => {
+    return content.split('\n').map((line, _idx) => {
       const trimmed = line.trim();
       if (!trimmed) return '';
       // Retain JSON brackets and basic structure labels, redact prompts and operational rules
@@ -185,7 +197,7 @@ ${workflows ? `## Workflow Workplans\n${workflows}\n` : ''}
     name: string,
     version: string,
     compiledPrompt: string,
-    variables: Record<string, any>,
+    variables: Record<string, HarnessVariableValue>,
     operatingRules?: string
   ): string {
     return JSON.stringify(
@@ -211,7 +223,7 @@ ${workflows ? `## Workflow Workplans\n${workflows}\n` : ''}
     name: string,
     version: string,
     compiledPrompt: string,
-    variables: Record<string, any>
+    variables: Record<string, HarnessVariableValue>
   ): string {
     // Elegant standard stringification for config systems
     const cleanPrompt = compiledPrompt.replace(/\n/g, '\n    ');

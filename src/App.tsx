@@ -1,5 +1,6 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { ErrorBoundary } from './components/ErrorBoundary';
 import Layout from './components/Layout';
 import LandingPage from './pages/LandingPage';
 import PricingPage from './pages/PricingPage';
@@ -99,7 +100,9 @@ function PageWrapper({ children }: { children: React.ReactNode }) {
       transition={{ duration: 0.3, ease: "easeOut" }}
       className="w-full h-full"
     >
-      {children}
+      <ErrorBoundary>
+        {children}
+      </ErrorBoundary>
     </motion.div>
   );
 }

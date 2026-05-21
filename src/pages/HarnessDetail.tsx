@@ -1,11 +1,14 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { SAMPLE_TEMPLATES, CATEGORIES } from '../data';
 import { Star, Shield, ArrowLeft, CheckCircle2 } from 'lucide-react';
 import { PremiumLock } from '../components/PremiumLock';
+import { CheckoutModal } from '../components/CheckoutModal';
 
 export default function HarnessDetail() {
   const { id } = useParams();
+  const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
+
   const template = SAMPLE_TEMPLATES.find(t => t.id === id) || SAMPLE_TEMPLATES[0];
 
   if (!template) {
@@ -86,7 +89,7 @@ export default function HarnessDetail() {
               </div>
             </div>
             {template.isPremium && (
-              <PremiumLock price={template.price} />
+              <PremiumLock price={template.price} onPurchase={() => setIsCheckoutOpen(true)} />
             )}
           </section>
         </div>
@@ -101,7 +104,10 @@ export default function HarnessDetail() {
             </div>
 
             <div className="flex flex-col gap-3">
-              <button className="w-full btn-primary text-base">
+              <button
+                className="w-full btn-primary text-base"
+                onClick={() => template.price > 0 && setIsCheckoutOpen(true)}
+              >
                 {template.price === 0 ? 'Install Harness' : 'Purchase License'}
               </button>
               <button className="w-full bg-slate-50 border border-slate-200 text-slate-600 py-2.5 rounded-lg font-bold hover:bg-slate-100 transition-all text-sm">
@@ -134,6 +140,13 @@ export default function HarnessDetail() {
           </div>
         </div>
       </div>
+      <CheckoutModal
+        isOpen={isCheckoutOpen}
+        onClose={() => setIsCheckoutOpen(false)}
+        planTitle={template.name}
+        planPrice={`$${template.price}`}
+        billingCycle="monthly"
+      />
     </div>
   );
 }

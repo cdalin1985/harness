@@ -88,7 +88,7 @@ export interface HarnessInstance {
   templateId: string;
   versionId: string;
   name: string;
-  customizedVariables: Record<string, any>;
+  customizedVariables: Record<string, string | number | boolean>;
   customizedPrompt: string;
   notes: string;
   status: 'draft' | 'active' | 'archived';
