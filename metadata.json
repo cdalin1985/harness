@@ -1,0 +1,6 @@
+{
+  "name": "HarnessOS",
+  "description": "Premium full-stack SaaS for selling, customizing, testing, and exporting AI Agent Harnesses.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

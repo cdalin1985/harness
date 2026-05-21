@@ -1,0 +1,98 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "System user profile",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" },
+        "email": { "type": "string" },
+        "displayName": { "type": "string" },
+        "photoURL": { "type": "string" },
+        "role": { "type": "string", "enum": ["guest", "user", "workspace_owner", "workspace_admin", "content_editor", "admin", "super_admin"] },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["uid", "email", "role"]
+    },
+    "Workspace": {
+      "title": "Workspace",
+      "description": "A container for teams and harnesses",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "ownerId": { "type": "string" },
+        "tier": { "type": "string", "enum": ["free", "pro", "enterprise"] },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "name", "ownerId"]
+    },
+    "HarnessCategory": {
+      "title": "Harness Category",
+      "description": "Business categories for harnesses",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "description": { "type": "string" },
+        "icon": { "type": "string" }
+      }
+    },
+    "HarnessTemplate": {
+      "title": "Harness Template",
+      "description": "Base template for an agent harness",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "categoryId": { "type": "string" },
+        "name": { "type": "string" },
+        "description": { "type": "string" },
+        "price": { "type": "number" },
+        "isPremium": { "type": "boolean" },
+        "currentVersionId": { "type": "string" }
+      }
+    },
+    "HarnessVersion": {
+      "title": "Harness Version",
+      "description": "A specific version of a harness operating package",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "templateId": { "type": "string" },
+        "versionNumber": { "type": "string" },
+        "systemPrompt": { "type": "string" },
+        "roleDefinition": { "type": "string" },
+        "workflows": { "type": "string" },
+        "toolRules": { "type": "string" },
+        "memoryRules": { "type": "string" },
+        "inputOutputTemplates": { "type": "string" },
+        "qualityGates": { "type": "string" },
+        "evalRubric": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      }
+    },
+    "HarnessInstance": {
+      "title": "Harness Instance",
+      "description": "A deployed instance of a harness template",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "workspaceId": { "type": "string" },
+        "templateId": { "type": "string" },
+        "versionId": { "type": "string" },
+        "name": { "type": "string" },
+        "variables": { "type": "object" },
+        "status": { "type": "string", "enum": ["draft", "active", "archived"] },
+        "lastTestedAt": { "type": "string", "format": "date-time" }
+      }
+    }
+  },
+  "firestore": {
+    "/users/{uid}": { "schema": "User", "description": "User profiles" },
+    "/workspaces/{workspaceId}": { "schema": "Workspace", "description": "Workspaces" },
+    "/categories/{categoryId}": { "schema": "HarnessCategory", "description": "Harness categories" },
+    "/templates/{templateId}": { "schema": "HarnessTemplate", "description": "Available harnesses" },
+    "/templates/{templateId}/versions/{versionId}": { "schema": "HarnessVersion", "description": "Version history for templates" },
+    "/workspaces/{workspaceId}/instances/{instanceId}": { "schema": "HarnessInstance", "description": "Deployed harness instances" }
+  }
+}

@@ -1,0 +1,39 @@
+@import "tailwindcss";
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Space+Grotesk:wght@300;400;500;600;700&display=swap');
+
+@theme {
+  --font-sans: "Inter", "SF Pro Text", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Space Grotesk", sans-serif;
+  
+  --color-brand: #4F46E5;
+  --color-surface: #F5F5F7;
+  --color-text-main: #1D1D1F;
+  --color-sidebar: #111827;
+  --radius-card: 16px;
+  --radius-btn: 8px;
+}
+
+body {
+  @apply bg-surface text-text-main font-sans antialiased;
+}
+
+h1, h2, h3, .font-display {
+  @apply font-bold tracking-tight text-text-main;
+  letter-spacing: -0.02em;
+}
+
+.btn-primary {
+  @apply bg-brand text-white font-semibold py-2.5 px-5 rounded-[var(--radius-btn)] transition-all hover:opacity-90 active:scale-[0.98];
+}
+
+.card {
+  @apply bg-white border border-[#E5E7EB] rounded-[var(--radius-card)] p-6 shadow-sm transition-all hover:shadow-md;
+}
+
+.sidebar-nav-item {
+  @apply flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg transition-all text-[#9CA3AF] hover:text-white hover:bg-white/5;
+}
+
+.sidebar-nav-item-active {
+  @apply bg-[#1F2937] text-white;
+}

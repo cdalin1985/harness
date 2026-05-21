@@ -1,0 +1,112 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // 1. Global Safety Net
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // --- PRIMITIVES & HELPERS ---
+    function isSignedIn() { return request.auth != null; }
+    function isVerified() { return isSignedIn() && request.auth.token.email_verified == true; }
+    function incoming() { return request.resource.data; }
+    function existing() { return resource.data; }
+    function isValidId(id) { return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$'); }
+    
+    // Auth-based role checks (Trusted DB reads)
+    function getUserRole() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role;
+    }
+    function isAdmin() {
+      return isVerified() && getUserRole() in ['admin', 'super_admin'];
+    }
+    function isEditor() {
+      return isVerified() && getUserRole() in ['content_editor', 'admin', 'super_admin'];
+    }
+
+    // --- COLLECTION RULES ---
+
+    // 2. Users
+    match /users/{uid} {
+      function isValidUser(data) {
+        return data.keys().hasAll(['uid', 'email', 'role', 'createdAt']) &&
+               data.keys().size() == 6 &&
+               data.uid is string && data.uid == uid &&
+               data.email is string && data.email.size() <= 256 &&
+               data.role in ['guest', 'user', 'workspace_owner', 'workspace_admin', 'content_editor', 'admin', 'super_admin'] &&
+               data.createdAt == request.time;
+      }
+      
+      allow get: if isVerified() && (request.auth.uid == uid || isAdmin());
+      // No blanket list of users
+      allow list: if isAdmin();
+      
+      allow create: if isVerified() && request.auth.uid == uid && isValidUser(incoming()) && incoming().role == 'user';
+      
+      allow update: if isVerified() && request.auth.uid == uid && isValidUser(incoming()) &&
+                       (incoming().role == existing().role || incoming().role == 'workspace_owner') && // Allow self-upgrade to workspace_owner on payment/checkout
+                       incoming().uid == existing().uid &&
+                       incoming().createdAt == existing().createdAt;
+    }
+
+    // 2b. Pre-launch Waitlist
+    match /waitlist/{email} {
+      allow create: if request.resource.data.email is string && 
+                       request.resource.data.email.size() <= 256 &&
+                       request.resource.data.createdAt == request.time;
+      allow read: if isVerified() && isAdmin();
+    }
+
+    // 3. Harness Categories
+    match /categories/{categoryId} {
+      function isValidCategory(data) {
+        return data.keys().hasAll(['id', 'name', 'description', 'icon']) &&
+               data.id == categoryId &&
+               data.name is string && data.name.size() <= 100 &&
+               data.description is string && data.description.size() <= 500;
+      }
+      allow read: if true; // Public catalog
+      allow write: if isEditor() && isValidCategory(incoming()) && isValidId(categoryId);
+    }
+
+    // 4. Harness Templates
+    match /templates/{templateId} {
+      function isValidTemplate(data) {
+        return data.keys().hasAll(['id', 'categoryId', 'name', 'description', 'price', 'isPremium', 'currentVersionId']) &&
+               data.id == templateId &&
+               data.price is number && data.price >= 0;
+      }
+      allow read: if true; // Public catalog
+      allow write: if isEditor() && isValidTemplate(incoming()) && isValidId(templateId);
+      
+      match /versions/{versionId} {
+        allow read: if isVerified(); // Might need more restriction for premium
+        allow write: if isEditor() && isValidId(versionId);
+      }
+    }
+
+    // 5. Workspaces
+    match /workspaces/{workspaceId} {
+      function isWorkspaceOwner() {
+        return existing().ownerId == request.auth.uid;
+      }
+      function isWorkspaceMember() {
+        // Simple member check (ideally a subcollection members, but using owner for MVP)
+        return isWorkspaceOwner() || isAdmin();
+      }
+      
+      allow get: if isVerified() && isWorkspaceMember();
+      allow list: if isVerified() && resource.data.ownerId == request.auth.uid;
+      
+      allow create: if isVerified() && incoming().ownerId == request.auth.uid;
+      allow update: if isVerified() && isWorkspaceOwner() && incoming().ownerId == existing().ownerId;
+      allow delete: if isVerified() && isWorkspaceOwner();
+
+      // 6. Harness Instances
+      match /instances/{instanceId} {
+        allow read: if isVerified() && get(/databases/$(database)/documents/workspaces/$(workspaceId)).data.ownerId == request.auth.uid;
+        allow write: if isVerified() && get(/databases/$(database)/documents/workspaces/$(workspaceId)).data.ownerId == request.auth.uid;
+      }
+    }
+  }
+}
